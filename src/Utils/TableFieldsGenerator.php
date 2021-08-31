@@ -79,15 +79,26 @@ class TableFieldsGenerator
         foreach ($mappings as $dbType => $doctrineType) {
             $platform->registerDoctrineTypeMapping($dbType, $doctrineType);
         }
-
-        $columns = $this->schemaManager->listTableColumns($tableName);
-
+        
+        $tableDetails =  $this->schemaManager->listTableDetails($tableName);
         $this->columns = [];
-        foreach ($columns as $column) {
-            if (!in_array($column->getName(), $ignoredFields)) {
+        $this->hiddenFields = [];
+        foreach ($tableDetails->getColumns() as $column) {
+            if (in_array($column->getName(), $ignoredFields)) {
+                $this->hiddenFields[] = $column->getName();
+            }
+            else{
                 $this->columns[] = $column;
             }
         }
+
+        $this->uniques = [];
+        foreach ($tableDetails->getIndexes() as $index) {
+            if ($index->isUnique()) {
+                $this->uniques = array_merge($this->uniques, $index->getColumns());
+            }
+        }
+        $this->uniques = array_diff($this->uniques, $ignoredFields);
 
         $this->primaryKey = $this->getPrimaryKeyOfTable($tableName);
         $this->timestamps = static::getTimestampFieldNames();
@@ -105,45 +116,69 @@ class TableFieldsGenerator
             switch ($type) {
                 case 'integer':
                     $field = $this->generateIntFieldInput($column, 'integer');
+                    $field->validations = [$column->getNotnull() ? 'required' : 'nullable', 'integer'];
                     break;
                 case 'smallint':
                     $field = $this->generateIntFieldInput($column, 'smallInteger');
+                    $field->validations = [$column->getNotnull() ? 'required' : 'nullable', 'integer'];
                     break;
                 case 'bigint':
                     $field = $this->generateIntFieldInput($column, 'bigInteger');
+                    $field->validations = [$column->getNotnull() ? 'required' : 'nullable', 'integer'];
                     break;
                 case 'boolean':
                     $name = Str::title(str_replace('_', ' ', $column->getName()));
                     $field = $this->generateField($column, 'boolean', 'checkbox,1');
+                    $field->validations = [$column->getNotnull() ? 'required' : 'nullable', 'boolean'];
                     break;
                 case 'datetime':
                     $field = $this->generateField($column, 'datetime', 'date');
+                    $field->validations = [$column->getNotnull() ? 'required' : 'nullable', 'date'];
                     break;
                 case 'datetimetz':
                     $field = $this->generateField($column, 'dateTimeTz', 'date');
+                    $field->validations = [$column->getNotnull() ? 'required' : 'nullable', 'date'];
                     break;
                 case 'date':
                     $field = $this->generateField($column, 'date', 'date');
+                    $field->validations = [$column->getNotnull() ? 'required' : 'nullable', 'date'];
                     break;
                 case 'time':
                     $field = $this->generateField($column, 'time', 'text');
+                    $field->validations = [$column->getNotnull() ? 'required' : 'nullable', 'date_format:H:is'];
                     break;
                 case 'decimal':
                     $field = $this->generateNumberInput($column, 'decimal');
+                    $field->validations = [$column->getNotnull() ? 'required' : 'nullable', 'integer'];
                     break;
                 case 'float':
                     $field = $this->generateNumberInput($column, 'float');
+                    $field->validations = [$column->getNotnull() ? 'required' : 'nullable', 'numeric'];
                     break;
                 case 'string':
                     $field = $this->generateField($column, 'string', 'text');
+                    $field->validations = [$column->getNotnull() ? 'required' : 'nullable', 'string'];
+                    // Enforce a maximum string length if possible.
+                    foreach (explode(':', $field->dbInput) as $key => $value) {
+                        if (preg_match('/string,(\d+)/', $value, $matches)) {
+                            $field->validations[] = 'max:'.$matches[1];
+                        }
+                    }
                     break;
                 case 'text':
                     $field = $this->generateField($column, 'text', 'textarea');
+                    $field->validations = [$column->getNotnull() ? 'required' : 'nullable', 'string'];
                     break;
                 default:
                     $field = $this->generateField($column, 'string', 'text');
+                    $field->validations = [$column->getNotnull() ? 'required' : 'nullable', 'string'];
                     break;
             }
+            $tableNameSingular = Str::singular($this->tableName);
+            if(in_array($field->name, $this->uniques)){
+                $field->validations[] = "unique:$this->tableName,$field->name,{\$this->route('$tableNameSingular')}";
+            }
+            $field->validations = implode('|', $field->validations);
 
             if (strtolower($field->name) == 'password') {
                 $field->htmlType = 'password';

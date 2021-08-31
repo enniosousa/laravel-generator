@@ -71,7 +71,7 @@ class ControllerGenerator extends BaseGenerator
         }
 
         $templateData = fill_template($this->commandData->dynamicVars, $templateData);
-
+        $templateData = $this->fillJsValidator($templateData);
         FileUtil::createFile($this->path, $this->fileName, $templateData);
 
         $this->commandData->commandComment("\nController created: ");
@@ -103,6 +103,30 @@ class ControllerGenerator extends BaseGenerator
 
         $this->commandData->commandComment("\nDataTable created: ");
         $this->commandData->commandInfo($fileName);
+    }
+
+    private function fillJsValidator($templateData)
+    {
+        if (class_exists(\Proengsoft\JsValidation\Facades\JsValidatorFacade::class)) {
+            $templateData = str_replace(
+                '$JS_VALIDATOR_IMPORT$',
+                'use Proengsoft\JsValidation\Facades\JsValidatorFacade as JsValidator;',
+                $templateData
+            );
+
+            $modelName = $this->commandData->dynamicVars['$MODEL_NAME$'];
+            $templateData = str_replace(
+                '$JS_VALIDATOR_VAR$',
+                "'validator'=> JsValidator::formRequest(Create{$modelName}Request::class, '#crud-form'),",
+                $templateData
+            );
+        }
+        else{
+            $templateData = str_replace('$JS_VALIDATOR_IMPORT$'.PHP_EOL, '', $templateData);
+            $templateData = str_replace('$JS_VALIDATOR_VAR$'.PHP_EOL, '//', $templateData);
+        }
+
+        return $templateData;
     }
 
     private function generateDataTableColumns()

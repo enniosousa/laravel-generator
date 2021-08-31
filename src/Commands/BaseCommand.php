@@ -245,25 +245,32 @@ class BaseCommand extends Command
 
     private function saveLocaleFile()
     {
-        $locales = [
-            'singular' => $this->commandData->modelName,
-            'plural'   => $this->commandData->config->mPlural,
-            'fields'   => [],
-        ];
-
+        $fields = [];
         foreach ($this->commandData->fields as $field) {
-            $locales['fields'][$field->name] = Str::title(str_replace('_', ' ', $field->name));
+            $key = $field->name;
+            $value = Str::title(str_replace('_', ' ', $field->name));
+            $fields[] = "\"$key\" => \"$value\"";
         }
+        $fields[] = '';
+        $fields = implode(','.infy_nl_tab(1, 2), $fields);
+        $this->commandData->addDynamicVariable('$LOCALE_FIELDS$', $fields);
 
-        $path = config('infyom.laravel_generator.path.models_locale_files', base_path('resources/lang/en/models/'));
+        $templateData = get_template('model_locale.model_locale', 'laravel-generator');
+
+        $templateData = fill_template($this->commandData->dynamicVars, $templateData);
 
         $fileName = $this->commandData->config->mCamelPlural.'.php';
 
-        if (file_exists($path.$fileName) && !$this->confirmOverwrite($fileName)) {
-            return;
+        $locales = array_unique([config('app.locale'),config('app.fallback_locale')]);
+        foreach($locales as $locale){
+            $path = config('infyom.laravel_generator.path.models_locale_files', base_path("resources/lang/$locale/models/"));
+
+            if (file_exists($path.$fileName) && !$this->confirmOverwrite($fileName)) {
+                return;
+            }
+            
+            FileUtil::createFile($path, $fileName, $templateData);
         }
-        $content = "<?php\n\nreturn ".var_export($locales, true).';'.\PHP_EOL;
-        FileUtil::createFile($path, $fileName, $content);
         $this->commandData->commandComment("\nModel Locale File saved: ");
         $this->commandData->commandInfo($fileName);
     }

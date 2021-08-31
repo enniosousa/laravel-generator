@@ -364,6 +364,27 @@ class ViewGenerator extends BaseGenerator
         return $fieldTemplate;
     }
 
+    private function fillJsValidator($templateData)
+    {
+        if (class_exists(\Proengsoft\JsValidation\Facades\JsValidatorFacade::class)) {
+            $templateData = str_replace(
+                '$JS_VALIDATOR_SCRIPT$',
+                implode(PHP_EOL, [
+                    '@push("third_party_scripts")',
+                    infy_tab(4 * 4).'<script type="text/javascript" src="{{ asset(\'vendor/jsvalidation/js/jsvalidation.js\')}}"></script>',
+                    infy_tab(4 * 4).'{!! $validator !!}',
+                    infy_tab(4 * 3).'@endpush',
+                ]),
+                $templateData
+            );
+        }
+        else{
+            $templateData = str_replace('$JS_VALIDATOR_SCRIPT$'.PHP_EOL, '', $templateData);
+        }
+
+        return $templateData;
+    }
+
     private function generateCreate()
     {
         $templateName = 'create';
@@ -373,6 +394,8 @@ class ViewGenerator extends BaseGenerator
         }
 
         $templateData = get_template('scaffold.views.'.$templateName, $this->templateType);
+
+        $templateData = $this->fillJsValidator($templateData);
 
         $templateData = fill_template($this->commandData->dynamicVars, $templateData);
 
@@ -389,6 +412,8 @@ class ViewGenerator extends BaseGenerator
         }
 
         $templateData = get_template('scaffold.views.'.$templateName, $this->templateType);
+
+        $templateData = $this->fillJsValidator($templateData);
 
         $templateData = fill_template($this->commandData->dynamicVars, $templateData);
 

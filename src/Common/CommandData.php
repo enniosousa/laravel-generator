@@ -302,12 +302,15 @@ class CommandData
         if (!empty($ignoredFields)) {
             $ignoredFields = explode(',', trim($ignoredFields));
         } else {
-            $ignoredFields = [];
+            $ignoredFields = config('infyom.laravel_generator.options.excluded_fields', []);
         }
 
         $tableFieldsGenerator = new TableFieldsGenerator($tableName, $ignoredFields, $this->config->connection);
         $tableFieldsGenerator->prepareFieldsFromTable();
         $tableFieldsGenerator->prepareRelations();
+
+        $this->ignoredFields = $ignoredFields;
+        $this->hiddenFields = $tableFieldsGenerator->hiddenFields;
 
         $this->fields = $tableFieldsGenerator->fields;
         $this->relations = $tableFieldsGenerator->relations;
