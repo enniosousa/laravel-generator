@@ -8,7 +8,7 @@ use $NAMESPACE_REQUEST$\$MODEL_NAME$Request as Create$MODEL_NAME$Request;
 use $NAMESPACE_REQUEST$\$MODEL_NAME$Request as Update$MODEL_NAME$Request;
 use $NAMESPACE_MODEL$\$MODEL_NAME$;
 use $NAMESPACE_APP$\Http\Controllers\AppBaseController;
-use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Response;
 use Laracasts\Flash\Flash;
 $JS_VALIDATOR_IMPORT$
 

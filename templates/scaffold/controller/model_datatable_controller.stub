@@ -10,7 +10,7 @@ use $NAMESPACE_MODEL$\$MODEL_NAME$;
 use Laracasts\Flash\Flash;
 $JS_VALIDATOR_IMPORT$
 use $NAMESPACE_APP$\Http\Controllers\AppBaseController;
-use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Response;
 
 class $MODEL_NAME$Controller extends AppBaseController
 {

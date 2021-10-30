@@ -9,7 +9,7 @@ use $NAMESPACE_MODEL$\$MODEL_NAME$;
 use Illuminate\Http\Request;
 use Laracasts\Flash\Flash;
 $JS_VALIDATOR_IMPORT$
-use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Response;
 
 class $MODEL_NAME$Controller extends AppBaseController
 {
